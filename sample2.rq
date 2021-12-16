@@ -1,0 +1,12 @@
+PREFIX dbpj: <http://ja.dbpedia.org/resource/>
+PREFIX dbp-owl: <http://dbpedia.org/ontology/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?film_name
+WHERE
+{
+ ?film dbp-owl:director dbpj:ビートたけし;
+ dbp-owl:starring dbpj:ビートたけし;
+ rdfs:label ?film_name.
+}
+LIMIT 100
