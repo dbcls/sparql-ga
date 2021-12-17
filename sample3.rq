@@ -1,0 +1,21 @@
+#
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+ 
+SELECT DISTINCT (REPLACE(STR(?taxonomy),"http://identifiers.org/taxonomy/","") AS ?tax_id)
+WHERE
+{
+  {
+    SELECT ?feature_uri
+    {
+      GRAPH <http://togogenome.org/graph/tgup>
+      {
+        <http://togogenome.org/gene/9606:BRAC1> skos:exactMatch ?feature_uri .
+      }
+    } ORDER BY ?feature_uri LIMIT 1
+  }
+  GRAPH <http://togogenome.org/graph/refseq>
+  {
+     ?feature_uri  obo:RO_0002162 ?taxonomy
+  }
+}
