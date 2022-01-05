@@ -1,8 +1,10 @@
+require 'benchmark'
+require 'pry'
 require 'sparql/client'
 require "sparql"
 
+# SPARQL
 endpoint = "https://integbio.jp/togosite/sparql"
-
 rq = <<'SPARQL'.chop
 PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX taxon: <http://identifiers.org/taxonomy/>
@@ -30,9 +32,15 @@ WHERE {
 SPARQL
 
 client = SPARQL::Client.new(endpoint,
-                            :method => :get,
-                            :headers => {'Accept'=> 'application/sparql-results+json'})
+                            :method => :post)
+#puts client.url
+puts "original SPARQL:\n#{rq}"
+
+# convert
+parsedobject = SPARQL.parse(rq)
 
 
-rows = client.query(rq)
-puts rows.size
+rqfromparsedobject = parsedobject.to_sparql()
+
+puts "SPARQL converted from parsedobject: #{rqfromparsedobject}"
+
