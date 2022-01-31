@@ -39,7 +39,7 @@ client = SPARQL::Client.new(endpoint,
 
 # 3.times do |i|
 #   result = Benchmark.realtime do
-#     rows = client.query(rq)
+#     rows = client.query(DEFINE sql:select-option \"order\"\n+rq)
 #     puts rows.size
 #   end
 #   puts "オリジナル#{i+1}: #{result}"
@@ -58,9 +58,9 @@ c.each_with_index  {|cc,j|
   }
   rqfromsse = "--"
   begin
-    rqfromsse = sse.to_sparql()
+    rqfromsse = "DEFINE sql:select-option \"order\"\n"+sse.to_sparql()
     ## write rqfromsse to file
-    File.open("gene_biotype_result/#{j}.txt", "w") do |f|
+    File.open("gene_biotype_result/#{j}.rq", "w") do |f|
       f.puts rqfromsse
     end
 
@@ -68,6 +68,10 @@ c.each_with_index  {|cc,j|
     result = Benchmark.realtime do
       rows = client.query(rqfromsse)
       rowcount = rows.size
+      ## write rqfromsse to file
+      File.open("gene_biotype_result/#{j}.result.txt", "w") do |f|
+        f.puts rows
+      end
     end
   rescue => e
     p e

@@ -36,11 +36,17 @@ client = SPARQL::Client.new(endpoint,
 #puts client.url
 puts "original SPARQL:\n#{rq}"
 
-# convert
+# rows = client.query(rq)
+# puts rows.size
+
+# # convert
 parsedobject = SPARQL.parse(rq)
 
 
 rqfromparsedobject = parsedobject.to_sparql()
 
-puts "SPARQL converted from parsedobject: #{rqfromparsedobject}"
+puts "SPARQL converted from parsedobject:\n#{rqfromparsedobject}"
 
+
+# rows = client.query(rqfromparsedobject)
+# puts rows.size
