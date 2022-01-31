@@ -53,6 +53,7 @@ class SPARQLGA < GeneticAlgorithm
     return [p1, p2]
   end
   def run(chromosome, p_cross, p_mutation, iterations = 100,population_size = 100)
+
     # initial population
     population = population_size.times.map { generate(chromosome) }
     current_generation = population
@@ -86,10 +87,18 @@ class SPARQLGA < GeneticAlgorithm
       # NOTE: last generation is not evaluated
       current_generation = next_generation
       next_generation    = []
+      # 
+      timestr = SparqlChromosome.get_timestr
+      # save best fit
+      File.open("result/#{timestr}/#{cnt}_bestfit.txt", "w") { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}") }
+      # save fastest fit
+      File.open("result/#{timestr}/#{cnt}_fastest.txt", "w") { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}") }
+
     }
 
     # return best solution
     puts "All times Best fit: Chr #{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
+    puts "All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}"
 
     "#{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
   end
@@ -121,9 +130,16 @@ end
 class SparqlChromosome < Chromosome
   @@output_sparql_directory = ""
   @@output_time_directory = ""
+  @@output_timearray_directory = ""
 
   @@fitness_value_cache = {}
   @@elapsed_time_cache = {}
+
+  @@number_of_attemps = 3
+
+  @@alltime_best_fitness_value = -1
+  @@alltime_best_resulttime = -1
+  @@alltime_best_value = []
 
   @@endpoint = "https://integbio.jp/togosite/sparql"
   @@rq = <<'SPARQL'.chop
@@ -153,13 +169,28 @@ WHERE {
 SPARQL
   # executed sparql
   @executed_sparql = ""
+  # timestr
+  @@timestr = ""
+  def self.get_timestr
+    @@timestr
+  end
+  def self.set_timestr
+    # create result directory
+    if @@timestr == ""
+      t = Time.now
+      timestr = t.strftime("%Y%m%dT%H%M%S")
+      @@timestr = timestr
+      @@output_sparql_directgory =  FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
+      @@output_time_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
+      @@output_timearray_directory = FileUtils.mkdir_p("result/#{timestr}/timearray/")[0]
+    end
+  end
   def initialize(value)
     super(value)
-    # create result directory
-    t = Time.now
-    timestr = t.strftime("%Y%m%dT%H%M%S")
-    @@output_sparql_directgory =  FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
-    @@output_time_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
+    # set timestr
+    self.class.set_timestr
+    # record all execution time
+    @resulttimearray = []
   end    
   def fitness
     # check result is in cached
@@ -173,12 +204,29 @@ SPARQL
     sga.set_original_query(@@rq)
     puts "Chr: #{@value}"
     @executed_sparql = sga.create_new_querystring(@value)
-    @resulttime = sga.exec_sparql_query(@executed_sparql)
+    @@number_of_attemps.times{|i|
+      resulttime = sga.exec_sparql_query(@executed_sparql)
+      @resulttimearray << resulttime
+    }
+    # sort @resulttimearray
+    sortedsort = @resulttimearray.dup
+    sortedsort.sort!
+    @resulttime = sortedsort[sortedsort.size/2]
+    #
     if @resulttime==-1
       @fitness_value = 0
     else
       @fitness_value = 1/@resulttime
     end
+    # record all time best
+    fastest_time = sortedsort[0]
+    fastest_fit = 1/fastest_time
+    if @@alltime_best_fitness_value < fastest_fit
+      @@alltime_best_fitness_value = fastest_fit
+      @@alltime_best_resulttime = fastest_time
+      @@alltime_best_value = @value
+    end
+    #
     @@fitness_value_cache[@value] = @fitness_value
     @@elapsed_time_cache[@value] = @resulttime
     save_result()
@@ -207,10 +255,24 @@ SPARQL
     File.open("#{@@output_time_directory}/#{prefix}.time.txt", 'w') { |f|
       f.puts @resulttime
     }
+    # save elapsed time array
+    File.open("#{@@output_timearray_directory}/#{prefix}.timearray.txt", 'w') { |f|
+      f.puts @resulttimearray.join(",")
+    }
   end
 
   def get_elapsed_time
     @@elapsed_time_cache[@value]
+  end
+
+  def self.get_fastest_time
+    @@alltime_best_resulttime
+  end
+  def self.get_fastest_fitness
+    @@alltime_best_fitness_value
+  end
+  def self.get_fastest_chromosome
+    @@alltime_best_value
   end
 end
 
@@ -250,4 +312,4 @@ SPARQL
 
 # 
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=3, population_size=10)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=10, population_size=10)
