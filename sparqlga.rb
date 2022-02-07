@@ -204,11 +204,11 @@ SPARQL
     sga.set_original_query(@@rq)
     puts "Chr: #{@value}"
     @executed_sparql = sga.create_new_querystring(@value)
-    @@number_of_attemps.times{|i|
-      resulttime = sga.exec_sparql_query(@executed_sparql)
-      @resulttimearray << resulttime
-    }
-    # sort @resulttimearray
+    # @@number_of_attemps.times{|i|
+    #   resulttime = sga.exec_sparql_query(@executed_sparql)
+    #   @resulttimearray << resulttime
+    # }
+    @resulttimearray = sga.exec_sparql_query(@executed_sparql, @@number_of_attemps)
     sortedsort = @resulttimearray.dup
     sortedsort.sort!
     @resulttime = sortedsort[sortedsort.size/2]
@@ -312,4 +312,4 @@ SPARQL
 
 # 
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=10, population_size=10)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=20, population_size=20)
