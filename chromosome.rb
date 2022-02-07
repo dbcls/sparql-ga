@@ -1,9 +1,12 @@
+# frozen_string_literal: true
+
+# Chromosome class
 class Chromosome
-  NOT_IMPLEMENT_YET = "Not implemented yet"
+  NOT_IMPLEMENT_YET = 'Not implemented yet'
   # TODO: not use constant
   SIZE = 6
 
-  attr_reader :value
+  attr_reader :value, :fitness_value
 
   # higher fitness_value is better
   @fitness_value = 0
@@ -25,11 +28,8 @@ class Chromosome
     @value = value.map { |ch| rand < probability_of_mutation ? invert(ch) : ch }
   end
 
-  def get_chr
-    return @value
+  def chr
+    @value
   end
-  def get_fitness_value
-    return @fitness_value
-  end
-    
+
 end
