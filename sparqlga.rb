@@ -20,15 +20,15 @@ class SPARQLGA < GeneticAlgorithm
   end
   def select(population)
     # sort by fitness_value
-    newary = population.sort! { |a,b| b.get_fitness_value <=> a.get_fitness_value }
+    newary = population.sort! { |a,b| b.fitness_value <=> a.fitness_value }
     # sum of fitness_value for selection
-    sum = newary.inject(0) { |sum, ch| sum + ch.get_fitness_value }
+    sum = newary.inject(0) { |sum, ch| sum + ch.fitness_value }
     # select parent 1
     p1rand = rand(0..sum)
     f = 0
     p1 = newary[0]
     newary.each{|ch|
-      f += ch.get_fitness_value
+      f += ch.fitness_value
       if f >= p1rand
         p1 = ch
         break
@@ -36,7 +36,7 @@ class SPARQLGA < GeneticAlgorithm
     }
     # select parent 2
     # parent 2 is not the same as parent 1
-    sum = sum - p1.get_fitness_value
+    sum = sum - p1.fitness_value
     p2rand = rand(0..sum)
     f = 0
     p2 = newary[1]
@@ -44,7 +44,7 @@ class SPARQLGA < GeneticAlgorithm
       if ch == p1
         next
       end
-      f += ch.get_fitness_value
+      f += ch.fitness_value
       if f >= p2rand
         p2 = ch
         break
@@ -67,13 +67,13 @@ class SPARQLGA < GeneticAlgorithm
       # Exec fitness function
       current_generation.each { |ch| ch.fitness }
       # max
-      best_fit = current_generation.max_by { |ch| ch.get_fitness_value }.dup
+      best_fit = current_generation.max_by { |ch| ch.fitness_value }.dup
 
-      if best_fit.get_fitness_value > alltime_best.get_fitness_value
+      if best_fit.fitness_value > alltime_best.fitness_value
         alltime_best = best_fit.dup
       end
 
-      puts "Best fit: #{best_fit.value} => #{best_fit.get_fitness_value}, elapsed time: #{best_fit.get_elapsed_time}"
+      puts "Best fit: #{best_fit.value} => #{best_fit.fitness_value}, elapsed time: #{best_fit.get_elapsed_time}"
       (population.size / 2).times {
         selection = select(current_generation)
         # crossover
@@ -90,17 +90,17 @@ class SPARQLGA < GeneticAlgorithm
       # 
       timestr = SparqlChromosome.get_timestr
       # save best fit
-      File.open("result/#{timestr}/#{cnt}_bestfit.txt", "w") { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}") }
+      File.open("result/#{timestr}/#{cnt}_bestfit.txt", "w") { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}") }
       # save fastest fit
       File.open("result/#{timestr}/#{cnt}_fastest.txt", "w") { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}") }
 
     }
 
     # return best solution
-    puts "All times Best fit: Chr #{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
+    puts "All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
     puts "All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}"
 
-    "#{alltime_best.value} => #{alltime_best.get_fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
+    "#{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
   end
   # Croossover method  is OX
   def crossover(selection, chromosome)
@@ -281,7 +281,7 @@ end
 # # show ga @@char_size
 # puts ga.get_chr_size
 # #chr= ga.generate(SparqlChromosome)
-# # puts chr.get_chr
+# # puts chr.chr
 # puts ga.run(SparqlChromosome, 0.2, 0.01, 100)
 endpoint = "https://integbio.jp/togosite/sparql"
 rq = <<'SPARQL'.chop
@@ -312,4 +312,4 @@ SPARQL
 
 # 
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=20, population_size=20)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=2, population_size=4)
