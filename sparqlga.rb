@@ -314,4 +314,4 @@ SPARQL
 
 # main
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration: 2, population_size: 4)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iterations: 2, population_size: 4)
