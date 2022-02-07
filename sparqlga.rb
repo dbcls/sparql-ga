@@ -3,6 +3,7 @@ require_relative 'chromosome'
 require_relative 'sparqllib'
 require 'fileutils'
 
+# SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
   @@chr_size = -1
   def initialize(size)
@@ -10,14 +11,14 @@ class SPARQLGA < GeneticAlgorithm
   end
 
   def generate(chromosome)
-    value = (0..(@@chr_size-1)).to_a.shuffle
-  
+    value = (0..(@@chr_size - 1)).to_a.shuffle
     chromosome.new(value)
   end
 
   def get_chr_size
-    return @@chr_size
+    @@chr_size
   end
+
   def select(population)
     # sort by fitness_value
     newary = population.sort! { |a,b| b.fitness_value <=> a.fitness_value }
@@ -36,7 +37,7 @@ class SPARQLGA < GeneticAlgorithm
     }
     # select parent 2
     # parent 2 is not the same as parent 1
-    sum = sum - p1.fitness_value
+    sum -= p1.fitness_value
     p2rand = rand(0..sum)
     f = 0
     p2 = newary[1]
@@ -50,19 +51,17 @@ class SPARQLGA < GeneticAlgorithm
         break
       end
     }
-    return [p1, p2]
+    [p1, p2]
   end
-  def run(chromosome, p_cross, p_mutation, iterations = 100,population_size = 100)
 
+  def run(chromosome, p_cross, p_mutation, iterations = 100,population_size = 100)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     current_generation = population
     next_generation    = []
-    #
     alltime_best = population[0]
 
     iterations.times {|cnt|
-      #
       puts "Generation #{cnt}"
       # Exec fitness function
       current_generation.each { |ch| ch.fitness }
@@ -87,13 +86,11 @@ class SPARQLGA < GeneticAlgorithm
       # NOTE: last generation is not evaluated
       current_generation = next_generation
       next_generation    = []
-      # 
       timestr = SparqlChromosome.get_timestr
       # save best fit
-      File.open("result/#{timestr}/#{cnt}_bestfit.txt", "w") { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}") }
+      File.open("result/#{timestr}/#{cnt}_bestfit.txt", 'w') { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}") }
       # save fastest fit
-      File.open("result/#{timestr}/#{cnt}_fastest.txt", "w") { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}") }
-
+      File.open("result/#{timestr}/#{cnt}_fastest.txt", 'w') { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.get_fastest_chromosome} => #{SparqlChromosome.get_fastest_fitness}, elapsed time: #{SparqlChromosome.get_fastest_time}") }
     }
 
     # return best solution
@@ -102,10 +99,11 @@ class SPARQLGA < GeneticAlgorithm
 
     "#{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.get_elapsed_time}"
   end
+
   # Croossover method  is OX
   def crossover(selection, chromosome)
-    i1 = rand(0..@@chr_size-1)
-    i2 = rand(i1..@@chr_size-1)
+    i1 = rand(0..@@chr_size - 1)
+    i2 = rand(i1..@@chr_size - 1)
     if i1 == i2
         return selection
     end
@@ -113,24 +111,26 @@ class SPARQLGA < GeneticAlgorithm
     a2 = selection[1].value
     cr1 = Array.new(@@chr_size,-1)
     cr2 = Array.new(@@chr_size,-1)
-    i1.upto(i2) { |i|
+    i1.upto(i2) do |i|
       cr1[i] = a1[i]
       cr2[i] = a2[i]
-    }
-    s1 = a2-cr1
-    s2 = a1-cr2
-    0.upto(s1.size-1) { |i|
-      cr1[(i2+1+i)%@@chr_size] = s1[i]
-      cr2[(i2+1+i)%@@chr_size] = s2[i]
-    }
+    end
+    s1 = a2 - cr1
+    s2 = a1 - cr2
+    0.upto(s1.size - 1) do |i|
+      cr1[(i2 + 1 + i) % @@chr_size] = s1[i]
+      cr2[(i2 + 1 + i) % @@chr_size] = s2[i]
+    end
 
     [chromosome.new(cr1), chromosome.new(cr2)]
   end
 end
+
+# SPARQL Chromosome class
 class SparqlChromosome < Chromosome
-  @@output_sparql_directory = ""
-  @@output_time_directory = ""
-  @@output_timearray_directory = ""
+  @@output_sparql_directory = ''
+  @@output_time_directory = ''
+  @@output_timearray_directory = ''
 
   @@fitness_value_cache = {}
   @@elapsed_time_cache = {}
@@ -168,30 +168,32 @@ WHERE {
 }
 SPARQL
   # executed sparql
-  @executed_sparql = ""
+  @executed_sparql = ''
   # timestr
-  @@timestr = ""
+  @@timestr = ''
   def self.get_timestr
     @@timestr
   end
   def self.set_timestr
     # create result directory
-    if @@timestr == ""
+    if @@timestr == ''
       t = Time.now
       timestr = t.strftime("%Y%m%dT%H%M%S")
       @@timestr = timestr
-      @@output_sparql_directgory =  FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
+      @@output_sparql_directgory = FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
       @@output_time_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
       @@output_timearray_directory = FileUtils.mkdir_p("result/#{timestr}/timearray/")[0]
     end
   end
+
   def initialize(value)
     super(value)
     # set timestr
     self.class.set_timestr
     # record all execution time
     @resulttimearray = []
-  end    
+  end
+
   def fitness
     # check result is in cached
     if @@fitness_value_cache.has_key?(@value)
@@ -199,7 +201,6 @@ SPARQL
       @elapsed_time = @@elapsed_time_cache[@value]
       return @fitness_value
     end
-    
     sga = SparqlLib.new(@@endpoint)
     sga.set_original_query(@@rq)
     puts "Chr: #{@value}"
@@ -213,7 +214,7 @@ SPARQL
     sortedsort.sort!
     @resulttime = sortedsort[sortedsort.size/2]
     #
-    if @resulttime==-1
+    if @resulttime == -1
       @fitness_value = 0
     else
       @fitness_value = 1/@resulttime
@@ -226,10 +227,9 @@ SPARQL
       @@alltime_best_resulttime = fastest_time
       @@alltime_best_value = @value
     end
-    #
     @@fitness_value_cache[@value] = @fitness_value
     @@elapsed_time_cache[@value] = @resulttime
-    save_result()
+    save_result
     return @fitness_value
   end
 
@@ -240,14 +240,14 @@ SPARQL
         @value[i] = @value[pos]
         @value[pos] = x
       end
-    end    
+    end
   end
 
   def save_result
     # file prefix made by chromosome value
-    prefix = @value.join("_")
+    prefix = @value.join('_')
     # save result
-    
+
     File.open("#{@@output_sparql_directgory}/#{prefix}.rq", 'w') { |f|
       f.puts @executed_sparql
     }
@@ -312,4 +312,4 @@ SPARQL
 
 # 
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration=2, population_size=4)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iteration = 2, population_size = 4)
