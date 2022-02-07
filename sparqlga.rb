@@ -53,7 +53,7 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, iterations = 100, population_size = 100)
+  def run(chromosome, p_cross, p_mutation, iterations: 100, population_size: 100)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     current_generation = population
@@ -312,6 +312,6 @@ WHERE {
 }
 SPARQL
 
-# 
+# main
 ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iteration = 2, population_size = 4)
+puts ga.run(SparqlChromosome, 0.2, 0.01, iteration: 2, population_size: 4)
