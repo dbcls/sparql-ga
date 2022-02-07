@@ -1,6 +1,7 @@
 require 'benchmark'
 require 'sparql/client'
 require "sparql"
+require 'parallel'
 class SparqlLib
     def initialize(endpoint)
         @endpoint = endpoint
@@ -44,30 +45,29 @@ class SparqlLib
           print "\n"
         end
       end
-    def exec_sparql_query(querystring)
+    def exec_sparql_query(querystring, attemps)
         # construct SPARQL query
         # DEFINE is used to save order of query 
         rq = "DEFINE sql:select-option \"order\"\n"
         rq += querystring
         # result has time
         result = -1
-        begin
-            rowcount = -1
-            for i in 1..1 do
+        rl = [-1] * attemps
+        rowcount = -1
+        rl = Parallel.map(1..attemps) do |item|
+            result = -1
+            begin
                 result = Benchmark.realtime do
                     rows = @client.query(rq)
                     rowcount = rows.size
-                    # display_rows(rows)
-                    ## write rqfromsse to file
-                    # File.open("gene_biotype_result2/#{j}.result.txt", "w") do |f|
-                    #     f.puts rows
-                    # end  
                 end
-                puts "#{i}, #{rowcount}, #{result}"    
+                puts "#{item}, #{rowcount}, #{result}"
+                # p [item, rowcount, result]
+            rescue
+                # p [item, -1, -1]
             end
-        rescue => e
-            p e
+            result
         end
-        return result
+        return rl
     end
 end
