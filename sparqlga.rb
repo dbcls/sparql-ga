@@ -2,12 +2,17 @@ require_relative 'ga'
 require_relative 'chromosome'
 require_relative 'sparqllib'
 require 'fileutils'
+require 'optparse'
 
 # SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
   @@chr_size = -1
-  def initialize(size)
-    @@chr_size = size
+  def initialize(endpoint, sparqlqueryfile)
+    @@endpoint = endpoint
+    @@sparqlquery = File.open(sparqlqueryfile, 'r') {|f| f.read}
+    SparqlChromosome.endpoint(@@endpoint)
+    @@chr_size = SparqlChromosome.rq(@@sparqlquery)
+    puts "Chromosome size: #{@@chr_size}"
   end
 
   def generate(chromosome)
@@ -53,7 +58,7 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, iterations: 100, population_size: 100)
+  def run(chromosome, p_cross, p_mutation, iterations: 100, population_size: 100, number_of_attemps: 3)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     current_generation = population
@@ -141,32 +146,60 @@ class SparqlChromosome < Chromosome
   @@alltime_best_resulttime = -1
   @@alltime_best_value = []
 
-  @@endpoint = "https://integbio.jp/togosite/sparql"
-  @@rq = <<'SPARQL'.chop
-PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX taxon: <http://identifiers.org/taxonomy/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX dc: <http://purl.org/dc/elements/1.1/>
+  def self.endpoint(endpoint)
+    @@endpoint = endpoint
+  end
 
-SELECT DISTINCT ?parent ?child ?child_label
-FROM <http://rdf.integbio.jp/dataset/togosite/ensembl>
-WHERE {
-  ?enst obo:SO_transcribed_from ?ensg .
-  ?ensg a ?parent ;
-        obo:RO_0002162 taxon:9606 ;
-        faldo:location ?ensg_location ;
-        dc:identifier ?child ;
-        rdfs:label ?child_label .
-  FILTER(CONTAINS(STR(?parent), "terms/ensembl/"))
-  BIND(STRBEFORE(STRAFTER(STR(?ensg_location), "GRCh38/"), ":") AS ?chromosome)
-  VALUES ?chromosome {
-      "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"
-      "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22"
-      "X" "Y" "MT"
-  }
-}
-SPARQL
+  def self.rq(rq)
+    @@rq = rq
+    find_chr_size
+  end
+
+  def self.find_patterns(object)
+    if object.respond_to?(:patterns)
+      # TODO : check if patterns is only one
+      @patternsobject = object.patterns
+    elsif object.respond_to?(:operands)
+      object.operands.each do |x|
+        find_patterns(x)
+      end
+    end
+  end
+  
+
+  def self.find_chr_size
+    @sse = SPARQL.parse(@@rq)
+    find_patterns(@sse)
+    # length of pattersobject
+    @patternsobject.size
+  end
+
+#   @@endpoint = "https://integbio.jp/togosite/sparql"
+#   @@rq = <<'SPARQL'.chop
+# PREFIX obo: <http://purl.obolibrary.org/obo/>
+# PREFIX taxon: <http://identifiers.org/taxonomy/>
+# PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+# PREFIX faldo: <http://biohackathon.org/resource/faldo#>
+# PREFIX dc: <http://purl.org/dc/elements/1.1/>
+
+# SELECT DISTINCT ?parent ?child ?child_label
+# FROM <http://rdf.integbio.jp/dataset/togosite/ensembl>
+# WHERE {
+#   ?enst obo:SO_transcribed_from ?ensg .
+#   ?ensg a ?parent ;
+#         obo:RO_0002162 taxon:9606 ;
+#         faldo:location ?ensg_location ;
+#         dc:identifier ?child ;
+#         rdfs:label ?child_label .
+#   FILTER(CONTAINS(STR(?parent), "terms/ensembl/"))
+#   BIND(STRBEFORE(STRAFTER(STR(?ensg_location), "GRCh38/"), ":") AS ?chromosome)
+#   VALUES ?chromosome {
+#       "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"
+#       "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22"
+#       "X" "Y" "MT"
+#   }
+# }
+# SPARQL
   # executed sparql
   @executed_sparql = ''
   # timestr
@@ -285,33 +318,49 @@ end
 # #chr= ga.generate(SparqlChromosome)
 # # puts chr.chr
 # puts ga.run(SparqlChromosome, 0.2, 0.01, 100)
-endpoint = "https://integbio.jp/togosite/sparql"
-rq = <<'SPARQL'.chop
-PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX taxon: <http://identifiers.org/taxonomy/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX dc: <http://purl.org/dc/elements/1.1/>
+# endpoint = "https://integbio.jp/togosite/sparql"
+# rq = <<'SPARQL'.chop
+# PREFIX obo: <http://purl.obolibrary.org/obo/>
+# PREFIX taxon: <http://identifiers.org/taxonomy/>
+# PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+# PREFIX faldo: <http://biohackathon.org/resource/faldo#>
+# PREFIX dc: <http://purl.org/dc/elements/1.1/>
 
-SELECT DISTINCT ?parent ?child ?child_label
-FROM <http://rdf.integbio.jp/dataset/togosite/ensembl>
-WHERE {
-  ?enst obo:SO_transcribed_from ?ensg .
-  ?ensg a ?parent ;
-        obo:RO_0002162 taxon:9606 ;
-        faldo:location ?ensg_location ;
-        dc:identifier ?child ;
-        rdfs:label ?child_label .
-  FILTER(CONTAINS(STR(?parent), "terms/ensembl/"))
-  BIND(STRBEFORE(STRAFTER(STR(?ensg_location), "GRCh38/"), ":") AS ?chromosome)
-  VALUES ?chromosome {
-      "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"
-      "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22"
-      "X" "Y" "MT"
-  }
-}
-SPARQL
+# SELECT DISTINCT ?parent ?child ?child_label
+# FROM <http://rdf.integbio.jp/dataset/togosite/ensembl>
+# WHERE {
+#   ?enst obo:SO_transcribed_from ?ensg .
+#   ?ensg a ?parent ;
+#         obo:RO_0002162 taxon:9606 ;
+#         faldo:location ?ensg_location ;
+#         dc:identifier ?child ;
+#         rdfs:label ?child_label .
+#   FILTER(CONTAINS(STR(?parent), "terms/ensembl/"))
+#   BIND(STRBEFORE(STRAFTER(STR(?ensg_location), "GRCh38/"), ":") AS ?chromosome)
+#   VALUES ?chromosome {
+#       "1" "2" "3" "4" "5" "6" "7" "8" "9" "10"
+#       "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22"
+#       "X" "Y" "MT"
+#   }
+# }
+# SPARQL
 
 # main
-ga = SPARQLGA.new(6)
-puts ga.run(SparqlChromosome, 0.2, 0.01, iterations: 2, population_size: 4)
+#ga = SPARQLGA.new(6)
+#puts ga.run(SparqlChromosome, 0.2, 0.01, iterations: 2, population_size: 4)
+
+opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'iterations:2',
+                    'mutation_probability:0.01', 'number_of_attemps:3')
+puts opts
+puts opts['endpoint']
+if opts['endpoint'].nil?
+  puts 'Please specify endpoint'
+  exit
+end
+if opts['sparqlquery'].nil?
+  puts 'Please specify sparql query file'
+  exit
+end
+
+ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'])
+puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, iterations: opts['iterations'].to_i, population_size: opts['population_size'].to_i, number_of_attemps: opts['number_of_attemps'].to_i)
