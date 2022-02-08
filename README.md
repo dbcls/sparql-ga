@@ -32,7 +32,7 @@ bundle install --path vendor/bundle
     - Number of trials per each indivisual's evaluation
 
 ```console
-bundle exec ruby sparqlga.rb --endpoint="http://dev.togogenome.org/sparql" \
+bundle exec ruby sparql-ga.rb --endpoint="http://dev.togogenome.org/sparql" \
   --sparqlquery=sample5.rq --population_size=100 \
   --generations=50
 ```
