@@ -58,14 +58,14 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, iterations: 100, population_size: 100, number_of_attemps: 3)
+  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, number_of_trials: 3)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     current_generation = population
     next_generation    = []
     alltime_best = population[0]
 
-    iterations.times do |cnt|
+    generations.times do |cnt|
       puts "Generation #{cnt}"
       # Exec fitness function
       current_generation.each { |ch| ch.fitness }
@@ -140,7 +140,7 @@ class SparqlChromosome < Chromosome
   @@fitness_value_cache = {}
   @@elapsed_time_cache = {}
 
-  @@number_of_attemps = 3
+  @@number_of_trials = 3
 
   @@alltime_best_fitness_value = -1
   @@alltime_best_resulttime = -1
@@ -211,11 +211,11 @@ class SparqlChromosome < Chromosome
     sga.set_original_query(@@rq)
     puts "Chr: #{@value}"
     @executed_sparql = sga.create_new_querystring(@value)
-    # @@number_of_attemps.times{|i|
+    # @@number_of_trials.times{|i|
     #   resulttime = sga.exec_sparql_query(@executed_sparql)
     #   @resulttimearray << resulttime
     # }
-    @resulttimearray = sga.exec_sparql_query(@executed_sparql, @@number_of_attemps)
+    @resulttimearray = sga.exec_sparql_query(@executed_sparql, @@number_of_trials)
     sortedsort = @resulttimearray.dup
     sortedsort.sort!
     @resulttime = sortedsort[sortedsort.size / 2]
@@ -285,8 +285,8 @@ class SparqlChromosome < Chromosome
 end
 
 # main
-opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'iterations:2',
-                    'mutation_probability:0.01', 'number_of_attemps:3')
+opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
+                    'mutation_probability:0.01', 'number_of_trials:3')
 puts opts
 puts opts['endpoint']
 if opts['endpoint'].nil?
@@ -299,4 +299,4 @@ if opts['sparqlquery'].nil?
 end
 
 ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'])
-puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, iterations: opts['iterations'].to_i, population_size: opts['population_size'].to_i, number_of_attemps: opts['number_of_attemps'].to_i)
+puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i)

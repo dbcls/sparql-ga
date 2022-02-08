@@ -1,0 +1,22 @@
+# @endpoint http://dev.togogenome.org/sparql
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX up: <http://purl.uniprot.org/core/>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT DISTINCT ?protein ?nucleotide_resource ?simple_sequence ?node_31 ?taxon ?journal_citation ?annotation ?node_24 ?node_20 ?domain_extent ?subunit ?coiled_coil ?protein_publisher ?uniprot ?node_0
+WHERE {
+  ?node_0 rdfs:seeAlso ?uniprot .
+  ?uniprot rdfs:seeAlso ?protein .
+  ?protein dct:publisher ?protein_publisher .
+  ?protein up:annotation ?coiled_coil .
+  ?protein up:annotation ?subunit .
+  ?protein up:annotation ?domain_extent .
+  ?protein up:classifiedWith ?node_20 .
+  ?protein up:existence ?node_24 .
+  ?protein up:mappedAnnotation ?annotation .
+  ?protein up:mappedCitation ?journal_citation .
+  ?protein up:organism ?taxon .
+  ?protein up:reviewed ?node_31 .
+  ?protein up:sequence ?simple_sequence .
+  ?protein rdfs:seeAlso ?nucleotide_resource .
+}
+LIMIT 100
