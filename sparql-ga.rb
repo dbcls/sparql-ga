@@ -7,10 +7,11 @@ require 'optparse'
 # SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
   @@chr_size = -1
-  def initialize(endpoint, sparqlqueryfile)
+  def initialize(endpoint, sparqlqueryfile, remove_backslash: false)
     @@endpoint = endpoint
     @@sparqlquery = File.open(sparqlqueryfile, 'r') {|f| f.read}
     SparqlChromosome.endpoint(@@endpoint)
+    SparqlChromosome.remove_backslash(remove_backslash)
     @@chr_size = SparqlChromosome.rq(@@sparqlquery)
     puts "Chromosome size: #{@@chr_size}"
   end
@@ -58,9 +59,12 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, number_of_trials: 3)
+  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, number_of_trials: 3, include_original_order: false)
     # initial population
     population = population_size.times.map { generate(chromosome) }
+    # chromosome.new(value)
+    population[0] = chromosome.new((0..(@@chr_size - 1)).to_a) if include_original_order
+    puts population[0]
     current_generation = population
     next_generation    = []
     alltime_best = population[0]
@@ -146,6 +150,12 @@ class SparqlChromosome < Chromosome
   @@alltime_best_resulttime = -1
   @@alltime_best_value = []
 
+  @@remove_backslash = false
+
+  def self.remove_backslash(remove_backslash)
+    @@remove_backslash = remove_backslash
+  end
+
   def self.endpoint(endpoint)
     @@endpoint = endpoint
   end
@@ -211,6 +221,8 @@ class SparqlChromosome < Chromosome
     sga.set_original_query(@@rq)
     puts "Chr: #{@value}"
     @executed_sparql = sga.create_new_querystring(@value)
+    # remove backslash
+    @executed_sparql = @executed_sparql.gsub(/\\/, '') if @@remove_backslash
     # @@number_of_trials.times{|i|
     #   resulttime = sga.exec_sparql_query(@executed_sparql)
     #   @resulttimearray << resulttime
@@ -286,7 +298,7 @@ end
 
 # main
 opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
-                    'mutation_probability:0.01', 'number_of_trials:3')
+                    'mutation_probability:0.01', 'number_of_trials:3', 'remove_backslash', 'include_original_order')
 puts opts
 puts opts['endpoint']
 if opts['endpoint'].nil?
@@ -298,5 +310,6 @@ if opts['sparqlquery'].nil?
   exit
 end
 
-ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'])
-puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i)
+
+ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], remove_backslash: opts['remove_backslash'])
+puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i, include_original_order: opts['include_original_order'])

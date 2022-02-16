@@ -23,7 +23,6 @@ class SparqlLib
       end
     end
   end
-  
 
   def set_original_query(rq)
     @rq = rq
@@ -80,8 +79,14 @@ class SparqlLib
         end
         puts "#{item}, #{rowcount}, #{result}"
       # p [item, rowcount, result]
-      rescue StandardError
+      rescue SPARQL::Client::ServerError => e
+        p e.class
+        sleep 3
+      rescue StandardError => e
         # p [item, -1, -1]
+        # p e
+        p e.class
+        sleep 1
       end
       result
     end
