@@ -1,0 +1,13 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX ncbigene: <http://identifiers.org/ncbigene/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX up: <http://purl.uniprot.org/core/>
+PREFIX p9: <http://purl.uniprot.org/SHA-384/>
+SELECT DISTINCT ?gene ?node_55 ?refseq
+WHERE {
+  ?gene obo:so_part_of ?refseq .
+  ?gene dct:identifier "BRCA1" .
+  ?gene rdfs:seeAlso ncbigene:672 .
+  ?gene rdfs:subClassOf ?node_55 .
+}

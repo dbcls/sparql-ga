@@ -92,7 +92,7 @@ TODO: 突然変異の説明を書く
 - SPARQL
   - 最適化したいクエリ
   - 最適化したいクエリを投げるエンドポイント
-- ruby関連
+- Ruby関連
   - 実行に必要なライブラリ
 
 ### SPARQL
@@ -109,9 +109,9 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX up: <http://purl.uniprot.org/core/>
 PREFIX p9: <http://purl.uniprot.org/SHA-384/>
-SELECT DISTINCT ?gene ?node_55 ?refseq ?protein
+SELECT DISTINCT ?gene ?node_55 ?refseq
 WHERE {
-  ?protein up:mappedAnnotation p9:17D627D6E7D33D1A4BA3D187BD44176CE1C44E3D7324007F701F2B6A533B485BD039D59A62E6ED0BD89CB363094213C2 .
+  p9:17D627D6E7D33D1A4BA3D187BD44176CE1C44E3D7324007F701F2B6A533B485BD039D59A62E6ED0BD89CB363094213C2 .
   ?gene obo:so_part_of ?refseq .
   ?gene dct:identifier "BRCA1" .
   ?gene rdfs:seeAlso ncbigene:672 .
@@ -119,7 +119,7 @@ WHERE {
 }
 ```
 
-### ruby のライブラリ
+### Ruby のライブラリ
 
 以下のコマンドでインストールします。
 この場合インストール先は、カレントディレクトリの、 `vendor/bundle` になります。
@@ -136,16 +136,16 @@ bundle install --path vendor/bundle
 
 `DEFINE sql:select-option "order"`
 
-そのため、現状では、この句をサポートしているエンドポイントが対象となります。
+そのため現状では、Virtuosoを使用しているエンドポイントが対象となります。
 
-### rubyのコマンド
+### Rubyのコマンド
 
 使い方は、以下のようになります。
 
 ```console
 bundle exec ruby sparql-ga.rb \
   --endpoint="http://dev.togogenome.org/sparql" \
-  --sparqlquery=sample7_no_define.rq \
+  --sparqlquery=sample.rq \
   --population_size=100 \
   --generations=50 \
   --remove-backslash
@@ -156,7 +156,7 @@ bundle exec ruby sparql-ga.rb \
 - エンドポイント
   - "http://dev.togogenome.org/sparql"
 - SPARQLクエリ
-  - sample7_no_define.rq
+  - sample.rq
 - 集団のサイズ
   - 100
 - 世代数
@@ -184,15 +184,15 @@ Usage: sparql-ga [options]
 
 - `-v`, `--verbose`
   - 詳細な情報を出力する(default: 有効)
-- `sparqlquery`
+- `--sparqlquery`
   - 最適化するSPARQLクエリが書かれているファイル
-- `population_size`
+- `--population_size`
   - 集団のサイズ(default: 4)
-- `generations`
+- `--generations`
   - 世代数(default: 2)
-- `number_of_trials`
+- `--number_of_trials`
   - 個体を評価する際の同じクエリの実行回数(default: 3)
-- `remove_backslash`
+- `--remove_backslash`
   - バックスラッシュを削除するかどうかのフラグ(deafult: false)
 
 ## 結果の把握
