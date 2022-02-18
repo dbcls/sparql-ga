@@ -297,8 +297,8 @@ class SparqlChromosome < Chromosome
 end
 
 # main
-opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
-                    'mutation_probability:0.01', 'number_of_trials:3', 'remove_backslash', 'include_original_order')
+opts = ARGV.getopts('v', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
+                    'number_of_trials:3', 'remove_backslash', 'include_original_order')
 puts opts
 puts opts['endpoint']
 if opts['endpoint'].nil?
@@ -312,4 +312,4 @@ end
 
 
 ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], remove_backslash: opts['remove_backslash'])
-puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i, include_original_order: opts['include_original_order'])
+ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i, include_original_order: opts['include_original_order'])
