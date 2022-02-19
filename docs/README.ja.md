@@ -55,6 +55,8 @@ SPARQL-GAでは、クエリの実行にかかった時間を元に、評価値�
 2. 決められた回数、１で生成されたクエリをエンドポイントへ投げる
 3. 中央値を、その個体の評価値とする。
 
+また、SPARQL-GAでは実行結果はキャッシュされ、すでに実行されたものと同じ染色体であれば、キャッシュされた値が使用されます。
+
 ### 選択
 
 ルーレット選択を用いて、親と成る個体が選ばれます。
@@ -168,14 +170,15 @@ SPARQL-GAでは、以下のようなオプションがあります。
 
 ```text
 Usage: sparql-ga [options]
-    -v
         --verbose
         --sparqlquery=VAL
         --endpoint=VAL
-        --population_size=4
+        --population-size=4
         --generations=2
-        --number_of_trials=3
-        --remove_backslash
+        --number-of-trials=3
+        --leave-backslash
+        --parse-only
+        --execute-sparqlquery-only
 ```
 
 各オプションの意味は以下になります。
@@ -184,14 +187,18 @@ Usage: sparql-ga [options]
   - 詳細な情報を出力する(default: 有効)
 - `--sparqlquery`
   - 最適化するSPARQLクエリが書かれているファイル
-- `--population_size`
+- `--population-size`
   - 集団のサイズ(default: 4)
 - `--generations`
   - 世代数(default: 2)
-- `--number_of_trials`
+- `--number-of-trials`
   - 個体を評価する際の同じクエリの実行回数(default: 3)
-- `--remove_backslash`
-  - バックスラッシュを削除するかどうかのフラグ(deafult: false)
+- `--leave-backslash`
+  - バックスラッシュを残すかどうかのフラグ。標準では削除する。(deafult: true)
+- `--parse-only`
+  - クエリをパースして表示する。実行は行わない。
+- `--execute-sparqlquery-only`
+  - あたら得られたSPARQLクエリを実行する。最適化は行わない。
 
 ## 結果の把握
 

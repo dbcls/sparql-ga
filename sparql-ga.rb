@@ -7,13 +7,20 @@ require 'optparse'
 # SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
   @@chr_size = -1
-  def initialize(endpoint, sparqlqueryfile, remove_backslash: false)
+  def initialize(endpoint, sparqlqueryfile, leave_backslash: false, verbose: false, number_of_trials: 3)
     @@endpoint = endpoint
     @@sparqlquery = File.open(sparqlqueryfile, 'r') {|f| f.read}
+    @@leave_backslash = leave_backslash
     SparqlChromosome.endpoint(@@endpoint)
-    SparqlChromosome.remove_backslash(remove_backslash)
+    SparqlChromosome.leave_backslash(leave_backslash)
+    SparqlChromosome.verbose(verbose)
+    SparqlChromosome.number_of_trials(number_of_trials)
     @@chr_size = SparqlChromosome.rq(@@sparqlquery)
-    puts "Chromosome size: #{@@chr_size}"
+
+    @@verbose = verbose
+    if verbose
+      puts "Chromosome size: #{@@chr_size}"
+    end
   end
 
   def generate(chromosome)
@@ -59,18 +66,29 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, number_of_trials: 3, include_original_order: false)
+  def parse_only()
+    sga = SparqlLib.new(@@endpoint, @@verbose)
+    sga.set_original_query(@@sparqlquery)
+    parseresult = sga.parse_only()
+    parseresult = parseresult.gsub(/\\/, '') unless @@leave_backslash
+    message = ''
+    if @@verbose
+      message = 'Parse result:\n'
+    end
+    puts "#{message}#{parseresult}"
+  end
+
+  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, include_original_order: false)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     # chromosome.new(value)
     population[0] = chromosome.new((0..(@@chr_size - 1)).to_a) if include_original_order
-    puts population[0]
     current_generation = population
     next_generation    = []
     alltime_best = population[0]
 
     generations.times do |cnt|
-      puts "Generation #{cnt}"
+      puts "Generation #{cnt}" if @@verbose
       # Exec fitness function
       current_generation.each { |ch| ch.fitness }
 
@@ -81,7 +99,7 @@ class SPARQLGA < GeneticAlgorithm
         alltime_best = best_fit.dup
       end
 
-      puts "Best fit: #{best_fit.value} => #{best_fit.fitness_value}, elapsed time: #{best_fit.elapsed_time}"
+      puts "Best fit: #{best_fit.value} => #{best_fit.fitness_value}, elapsed time: #{best_fit.elapsed_time}" if @@verbose
       (population.size / 2).times do
         selection = select(current_generation)
         # crossover
@@ -150,10 +168,11 @@ class SparqlChromosome < Chromosome
   @@alltime_best_resulttime = -1
   @@alltime_best_value = []
 
-  @@remove_backslash = false
+  @@leave_backslash = false
+  @@verbose = false
 
-  def self.remove_backslash(remove_backslash)
-    @@remove_backslash = remove_backslash
+  def self.leave_backslash(leave_backslash)
+    @@leave_backslash = leave_backslash
   end
 
   def self.endpoint(endpoint)
@@ -163,6 +182,14 @@ class SparqlChromosome < Chromosome
   def self.rq(rq)
     @@rq = rq
     find_chr_size
+  end
+
+  def self.verbose(verbose)
+    @@verbose = verbose
+  end
+
+  def self.number_of_trials(number_of_trials)
+    @@number_of_trials = number_of_trials
   end
 
   def self.find_patterns(object)
@@ -217,12 +244,12 @@ class SparqlChromosome < Chromosome
       @elapsed_time = @@elapsed_time_cache[@value]
       return @fitness_value
     end
-    sga = SparqlLib.new(@@endpoint)
+    sga = SparqlLib.new(@@endpoint, @@verbose)
     sga.set_original_query(@@rq)
-    puts "Chr: #{@value}"
+    puts "Chr: #{@value}" if @@verbose
     @executed_sparql = sga.create_new_querystring(@value)
     # remove backslash
-    @executed_sparql = @executed_sparql.gsub(/\\/, '') if @@remove_backslash
+    @executed_sparql = @executed_sparql.gsub(/\\/, '') if not @@leave_backslash
     # @@number_of_trials.times{|i|
     #   resulttime = sga.exec_sparql_query(@executed_sparql)
     #   @resulttimearray << resulttime
@@ -297,10 +324,12 @@ class SparqlChromosome < Chromosome
 end
 
 # main
-opts = ARGV.getopts('v', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
-                    'number_of_trials:3', 'remove_backslash', 'include_original_order')
-puts opts
-puts opts['endpoint']
+opts = ARGV.getopts('', 'verbose', 'sparqlquery:', 'endpoint:', 'population-size:4', 'generations:2',
+                    'number-of-trials:3', 'leave-backslash', 'parse-only', 'execute-sparqlquery-only')
+if opts['verbose']
+  puts opts
+  puts opts['endpoint']
+end
 if opts['endpoint'].nil?
   puts 'Please specify endpoint'
   exit
@@ -310,6 +339,10 @@ if opts['sparqlquery'].nil?
   exit
 end
 
+ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], leave_backslash: opts['leave-backslash'], verbose: opts['verbose'],  number_of_trials: opts['number-of-trials'].to_i)
+if opts['parse_only']
+  ga.parse_only
+  exit
+end
 
-ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], remove_backslash: opts['remove_backslash'])
-ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i, include_original_order: opts['include_original_order'])
+ga.run(SparqlChromosome, 0.2, opts['mutation-probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population-size'].to_i)

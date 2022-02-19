@@ -30,8 +30,9 @@ bundle install --path vendor/bundle
     - Probability of mutaion (default: 0.01)
   - `number_of_trials` (default: 3)
     - Number of trials per each indivisual's evaluation
-  - `remove_backslash` (default: false)
-    - When sparql query which is sent to endpoint has backslash and it causes error, remove them.
+  - `leave_backslash` (default: false)
+    - This options is debug purpose, this option leave backslash in SPARQL query
+    - When sparql query which is sent to endpoint has backslash and it causes error, default remove them.
   - `include_original_order` (default:false)
     - Generation 0, Chromesome 0 is `[0, 1, 2 ... chromesome size]`
 
