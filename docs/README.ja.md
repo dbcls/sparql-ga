@@ -184,7 +184,7 @@ Usage: sparql-ga [options]
 各オプションの意味は以下になります。
 
 - `-v`, `--verbose`
-  - 詳細な情報を出力する(default: 有効)
+  - 詳細な情報を出力する(default: 無効)
 - `--sparqlquery`
   - 最適化するSPARQLクエリが書かれているファイル
 - `--population-size`
@@ -199,6 +199,7 @@ Usage: sparql-ga [options]
   - クエリをパースして表示する。実行は行わない。
 - `--execute-sparqlquery-only`
   - あたら得られたSPARQLクエリを実行する。最適化は行わない。
+  - 実行の際には、`DEFINE sql:select-option "order"` を先頭に加えて実行をする
 
 ## 結果の把握
 

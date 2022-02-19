@@ -7,10 +7,12 @@ require 'optparse'
 # SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
   @@chr_size = -1
+  @@number_of_trials = 3
   def initialize(endpoint, sparqlqueryfile, leave_backslash: false, verbose: false, number_of_trials: 3)
     @@endpoint = endpoint
     @@sparqlquery = File.open(sparqlqueryfile, 'r') {|f| f.read}
     @@leave_backslash = leave_backslash
+    @@number_of_trials = number_of_trials
     SparqlChromosome.endpoint(@@endpoint)
     SparqlChromosome.leave_backslash(leave_backslash)
     SparqlChromosome.verbose(verbose)
@@ -76,6 +78,12 @@ class SPARQLGA < GeneticAlgorithm
       message = 'Parse result:\n'
     end
     puts "#{message}#{parseresult}"
+  end
+
+  def execute_sparqlquery_only()
+    sga = SparqlLib.new(@@endpoint, true)
+    sga.set_original_query(@@sparqlquery)
+    sga.exec_sparql_query(@@sparqlquery, @@number_of_trials)
   end
 
   def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, include_original_order: false)
@@ -340,8 +348,12 @@ if opts['sparqlquery'].nil?
 end
 
 ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], leave_backslash: opts['leave-backslash'], verbose: opts['verbose'],  number_of_trials: opts['number-of-trials'].to_i)
-if opts['parse_only']
+if opts['parse-only']
   ga.parse_only
+  exit
+end
+if opts['execute-sparqlquery-only']
+  ga.execute_sparqlquery_only
   exit
 end
 
