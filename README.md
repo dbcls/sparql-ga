@@ -1,4 +1,4 @@
-# sparql-ga
+# SPARQL-GA
 
 Optimize SPARQL Query.
 
