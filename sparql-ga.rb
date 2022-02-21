@@ -80,7 +80,7 @@ class SPARQLGA < GeneticAlgorithm
     puts "#{message}#{parseresult}"
   end
 
-  def execute_sparqlquery_only()
+  def execute_only()
     sga = SparqlLib.new(@@endpoint, true)
     sga.set_original_query(@@sparqlquery)
     sga.exec_sparql_query(@@sparqlquery, @@number_of_trials)
@@ -333,7 +333,7 @@ end
 
 # main
 opts = ARGV.getopts('', 'verbose', 'sparqlquery:', 'endpoint:', 'population-size:4', 'generations:2',
-                    'number-of-trials:3', 'leave-backslash', 'parse-only', 'execute-sparqlquery-only')
+                    'number-of-trials:3', 'leave-backslash', 'parse-only', 'execute-only')
 if opts['verbose']
   puts opts
   puts opts['endpoint']
@@ -352,8 +352,8 @@ if opts['parse-only']
   ga.parse_only
   exit
 end
-if opts['execute-sparqlquery-only']
-  ga.execute_sparqlquery_only
+if opts['execute-only']
+  ga.execute_only
   exit
 end
 
