@@ -1,6 +1,8 @@
-require_relative 'ga'
-require_relative 'chromosome'
-require_relative 'sparqllib'
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+require 'ga'
+require 'chromosome'
+require 'sparqllib'
 require 'fileutils'
 require 'optparse'
 
