@@ -33,12 +33,10 @@ bundle install --path vendor/bundle
   - `leave_backslash` (default: false)
     - This options is debug purpose, this option leave backslash in SPARQL query
     - When sparql query which is sent to endpoint has backslash and it causes error, default remove them.
-  - `include_original_order` (default:false)
-    - Generation 0, Chromesome 0 is `[0, 1, 2 ... chromesome size]`
 
 ```console
 bundle exec ruby sparql-ga.rb --endpoint="http://dev.togogenome.org/sparql" \
-  --sparqlquery=sample5.rq --population_size=100 \
+  --sparqlquery=samples/sample.rq --population_size=100 \
   --generations=50
 ```
 
