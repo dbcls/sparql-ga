@@ -3,8 +3,6 @@
 # Chromosome class
 class Chromosome
   NOT_IMPLEMENT_YET = 'Not implemented yet'
-  # TODO: not use constant
-  SIZE = 6
 
   attr_reader :value, :fitness_value
 

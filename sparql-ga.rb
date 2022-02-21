@@ -6,14 +6,29 @@ require 'optparse'
 
 # SPARQLGA class
 class SPARQLGA < GeneticAlgorithm
+  @@resultdirectory = "results"
+  @@timestr = ''
   @@chr_size = -1
-  def initialize(endpoint, sparqlqueryfile, remove_backslash: false)
+  @@number_of_trials = 3
+  @@sparqlqueryfile = ''
+  @@commandlinestring = ''
+  def initialize(endpoint, sparqlqueryfile, leave_backslash: false, verbose: false, number_of_trials: 3, commandlinestring: '')
     @@endpoint = endpoint
+    @@sparqlqueryfile = sparqlqueryfile
     @@sparqlquery = File.open(sparqlqueryfile, 'r') {|f| f.read}
+    @@leave_backslash = leave_backslash
+    @@number_of_trials = number_of_trials
+    @@commandlinestring = commandlinestring
     SparqlChromosome.endpoint(@@endpoint)
-    SparqlChromosome.remove_backslash(remove_backslash)
+    SparqlChromosome.leave_backslash(leave_backslash)
+    SparqlChromosome.verbose(verbose)
+    SparqlChromosome.number_of_trials(number_of_trials)
     @@chr_size = SparqlChromosome.rq(@@sparqlquery)
-    puts "Chromosome size: #{@@chr_size}"
+
+    @@verbose = verbose
+    if verbose
+      puts "Chromosome size: #{@@chr_size}"
+    end
   end
 
   def generate(chromosome)
@@ -59,18 +74,55 @@ class SPARQLGA < GeneticAlgorithm
     [p1, p2]
   end
 
-  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, number_of_trials: 3, include_original_order: false)
+  def parse_only()
+    sga = SparqlLib.new(@@endpoint, @@verbose)
+    sga.set_original_query(@@sparqlquery)
+    parseresult = sga.parse_only()
+    parseresult = parseresult.gsub(/\\/, '') unless @@leave_backslash
+    message = ''
+    if @@verbose
+      message = 'Parse result:\n'
+    end
+    puts "#{message}#{parseresult}"
+  end
+
+  def execute_only()
+    sga = SparqlLib.new(@@endpoint, true)
+    sga.set_original_query(@@sparqlquery)
+    sga.exec_sparql_query(@@sparqlquery, @@number_of_trials)
+  end
+
+  def self.set_timestr_create_directory
+    # create result directory
+    if @@timestr == ''
+      t = Time.now
+      timestr = t.strftime('%Y%m%dT%H%M%S')
+      @@timestr = timestr
+      FileUtils.mkdir_p("#{@@resultdirectory}/#{timestr}/sparql")[0]
+      FileUtils.mkdir_p("#{@@resultdirectory}/#{timestr}/time")[0]
+      FileUtils.mkdir_p("#{@@resultdirectory}/#{timestr}/bestfit")[0]
+      FileUtils.mkdir_p("#{@@resultdirectory}/#{timestr}/fastest")[0]
+    end
+  end
+
+  def run(chromosome, p_cross, p_mutation, generations: 100, population_size: 100, include_original_order: false)
+    # initialize reults directory
+    self.class.set_timestr_create_directory
+    FileUtils.cp(@@sparqlqueryfile, "#{@@resultdirectory}/#{@@timestr}/")
+    # save command line string
+    File.open("#{@@resultdirectory}/#{@@timestr}/commandline.txt", 'w') {|f| f.write(@@commandlinestring)}
+    # Set result directoty information for SparqlChromosome
+    SparqlChromosome.set_timestr_and_resultdirectory(@@timestr, @@resultdirectory)
     # initial population
     population = population_size.times.map { generate(chromosome) }
     # chromosome.new(value)
     population[0] = chromosome.new((0..(@@chr_size - 1)).to_a) if include_original_order
-    puts population[0]
     current_generation = population
     next_generation    = []
     alltime_best = population[0]
 
     generations.times do |cnt|
-      puts "Generation #{cnt}"
+      puts "Generation #{cnt}" if @@verbose
       # Exec fitness function
       current_generation.each { |ch| ch.fitness }
 
@@ -81,7 +133,7 @@ class SPARQLGA < GeneticAlgorithm
         alltime_best = best_fit.dup
       end
 
-      puts "Best fit: #{best_fit.value} => #{best_fit.fitness_value}, elapsed time: #{best_fit.elapsed_time}"
+      puts "Best fit: #{best_fit.value} => #{best_fit.fitness_value}, elapsed time: #{best_fit.elapsed_time}" if @@verbose
       (population.size / 2).times do
         selection = select(current_generation)
         # crossover
@@ -95,11 +147,10 @@ class SPARQLGA < GeneticAlgorithm
       # NOTE: last generation is not evaluated
       current_generation = next_generation
       next_generation    = []
-      timestr = SparqlChromosome.timestr
       # save best fit
-      File.open("result/#{timestr}/#{cnt}_bestfit.txt", 'w') { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.elapsed_time}") }
+      File.open("#{@@resultdirectory}/#{@@timestr}/bestfit/#{cnt}_bestfit.txt", 'w') { |f| f.write("All times Best fit: Chr #{alltime_best.value} => #{alltime_best.fitness_value}, elapsed time: #{alltime_best.elapsed_time}") }
       # save fastest fit
-      File.open("result/#{timestr}/#{cnt}_fastest.txt", 'w') { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.fastest_chromosome} => #{SparqlChromosome.fastest_fitness}, elapsed time: #{SparqlChromosome.fastest_time}") }
+      File.open("#{@@resultdirectory}/#{@@timestr}/fastest/#{cnt}_fastest.txt", 'w') { |f| f.write("All times Fastest fit: Chr #{SparqlChromosome.fastest_chromosome} => #{SparqlChromosome.fastest_fitness}, elapsed time: #{SparqlChromosome.fastest_time}") }
     end
 
     # return best solution
@@ -150,10 +201,11 @@ class SparqlChromosome < Chromosome
   @@alltime_best_resulttime = -1
   @@alltime_best_value = []
 
-  @@remove_backslash = false
+  @@leave_backslash = false
+  @@verbose = false
 
-  def self.remove_backslash(remove_backslash)
-    @@remove_backslash = remove_backslash
+  def self.leave_backslash(leave_backslash)
+    @@leave_backslash = leave_backslash
   end
 
   def self.endpoint(endpoint)
@@ -163,6 +215,14 @@ class SparqlChromosome < Chromosome
   def self.rq(rq)
     @@rq = rq
     find_chr_size
+  end
+
+  def self.verbose(verbose)
+    @@verbose = verbose
+  end
+
+  def self.number_of_trials(number_of_trials)
+    @@number_of_trials = number_of_trials
   end
 
   def self.find_patterns(object)
@@ -187,25 +247,16 @@ class SparqlChromosome < Chromosome
   @executed_sparql = ''
   # timestr
   @@timestr = ''
-  def self.timestr
-    @@timestr
-  end
-  def self.set_timestr
-    # create result directory
-    if @@timestr == ''
-      t = Time.now
-      timestr = t.strftime('%Y%m%dT%H%M%S')
-      @@timestr = timestr
-      @@output_sparql_directgory = FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
-      @@output_time_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
-      @@output_timearray_directory = FileUtils.mkdir_p("result/#{timestr}/timearray/")[0]
-    end
+  def self.set_timestr_and_resultdirectory(timestr, resultdirectory)
+    @@timestr = timestr
+    @@output_sparql_directgory = "#{resultdirectory}/#{timestr}/sparql"
+    @@output_timearray_directory = "#{resultdirectory}/#{timestr}/time/"
   end
 
   def initialize(value)
     super(value)
     # set timestr
-    self.class.set_timestr
+    #self.class.set_timestr
     # record all execution time
     @resulttimearray = []
   end
@@ -217,16 +268,12 @@ class SparqlChromosome < Chromosome
       @elapsed_time = @@elapsed_time_cache[@value]
       return @fitness_value
     end
-    sga = SparqlLib.new(@@endpoint)
+    sga = SparqlLib.new(@@endpoint, @@verbose)
     sga.set_original_query(@@rq)
-    puts "Chr: #{@value}"
+    puts "Chr: #{@value}" if @@verbose
     @executed_sparql = sga.create_new_querystring(@value)
     # remove backslash
-    @executed_sparql = @executed_sparql.gsub(/\\/, '') if @@remove_backslash
-    # @@number_of_trials.times{|i|
-    #   resulttime = sga.exec_sparql_query(@executed_sparql)
-    #   @resulttimearray << resulttime
-    # }
+    @executed_sparql = @executed_sparql.gsub(/\\/, '') if not @@leave_backslash
     @resulttimearray = sga.exec_sparql_query(@executed_sparql, @@number_of_trials)
     sortedsort = @resulttimearray.dup
     sortedsort.sort!
@@ -269,12 +316,8 @@ class SparqlChromosome < Chromosome
     File.open("#{@@output_sparql_directgory}/#{prefix}.rq", 'w') do |f|
       f.puts @executed_sparql
     end
-    # save elapsed time
-    File.open("#{@@output_time_directory}/#{prefix}.time.txt", 'w') do |f|
-      f.puts @resulttime
-    end
     # save elapsed time array
-    File.open("#{@@output_timearray_directory}/#{prefix}.timearray.txt", 'w') do |f|
+    File.open("#{@@output_timearray_directory}/#{prefix}.time.txt", 'w') do |f|
       f.puts @resulttimearray.join(',')
     end
   end
@@ -297,10 +340,14 @@ class SparqlChromosome < Chromosome
 end
 
 # main
-opts = ARGV.getopts('vf:', 'verbose', 'sparqlquery:', 'endpoint:', 'population_size:4', 'generations:2',
-                    'mutation_probability:0.01', 'number_of_trials:3', 'remove_backslash', 'include_original_order')
-puts opts
-puts opts['endpoint']
+commandlinestring = ["#{$0}", ARGV].join(" \\\n")
+
+opts = ARGV.getopts('', 'verbose', 'sparqlquery:', 'endpoint:', 'population-size:4', 'generations:2',
+                    'number-of-trials:3', 'leave-backslash', 'parse-only', 'execute-only')
+if opts['verbose']
+  puts opts
+  puts opts['endpoint']
+end
 if opts['endpoint'].nil?
   puts 'Please specify endpoint'
   exit
@@ -310,6 +357,14 @@ if opts['sparqlquery'].nil?
   exit
 end
 
+ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], leave_backslash: opts['leave-backslash'], verbose: opts['verbose'],  number_of_trials: opts['number-of-trials'].to_i, commandlinestring: commandlinestring)
+if opts['parse-only']
+  ga.parse_only
+  exit
+end
+if opts['execute-only']
+  ga.execute_only
+  exit
+end
 
-ga = SPARQLGA.new(opts['endpoint'], opts['sparqlquery'], remove_backslash: opts['remove_backslash'])
-puts ga.run(SparqlChromosome, 0.2, opts['mutation_probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population_size'].to_i, number_of_trials: opts['number_of_trials'].to_i, include_original_order: opts['include_original_order'])
+ga.run(SparqlChromosome, 0.2, opts['mutation-probability'].to_f, generations: opts['generations'].to_i, population_size: opts['population-size'].to_i)

@@ -6,9 +6,11 @@ require 'parallel'
 # SPARQLGA library class
 class SparqlLib
   @patternsobject = nil
+  @verbose = false
 
-  def initialize(endpoint)
+  def initialize(endpoint, verbose)
     @endpoint = endpoint
+    @verbose = verbose
     @client = SPARQL::Client.new(@endpoint,
                                  method: :post)
   end
@@ -29,6 +31,10 @@ class SparqlLib
     @sse = SPARQL.parse(@rq)
     find_patterns(@sse)
     @pat = @patternsobject.clone
+  end
+
+  def parse_only()
+    @sse.to_sparql()
   end
 
   def create_new_querystring(order)
@@ -77,7 +83,7 @@ class SparqlLib
           rows = @client.query(rq)
           rowcount = rows.size
         end
-        puts "#{item}, #{rowcount}, #{result}"
+        puts "#{item}, #{rowcount}, #{result}" if @verbose
       # p [item, rowcount, result]
       rescue SPARQL::Client::ServerError => e
         p e.class
