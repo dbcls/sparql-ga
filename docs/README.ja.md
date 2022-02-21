@@ -102,7 +102,7 @@ Relative Order Preservation](https://citeseerx.ist.psu.edu/viewdoc/download?doi=
 最適化したいSPARQLクエリを準備します。
 このときに、SPARQLエンドポイントも知る必要があります。
 
-以下のクエリ `sample.rq` を例に、この文書では説明を進めます
+以下のクエリ `samples/sample.rq` を例に、この文書では説明を進めます
 
 ```sparql
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -144,7 +144,7 @@ bundle install --path vendor/bundle
 ```console
 bundle exec ruby sparql-ga.rb \
   --endpoint="http://dev.togogenome.org/sparql" \
-  --sparqlquery=sample.rq \
+  --sparqlquery=samples/sample.rq \
   --population_size=100 \
   --generations=50 \
   --remove-backslash
@@ -155,7 +155,7 @@ bundle exec ruby sparql-ga.rb \
 - エンドポイント
   - "http://dev.togogenome.org/sparql"
 - SPARQLクエリ
-  - `sample.rq` (2.2.1で紹介)
+  - `samples/sample.rq` (2.2.1で紹介)
 - 集団のサイズ
   - 100
 - 世代数
@@ -225,7 +225,7 @@ All times Fastest fit: Chr [2, 3, 0, 1] => 24.736555668893423, elapsed time: 0.0
 
 `results` というディレクトリの下に実行した日時のディレクトリができます。
 このディレクトリの下に4つディレクトリができます。
-そのほかに、最適化を実行したクエリのコピー(ファイル名は入力と同じ)と、同じ様にコマンドを実行するための、コマンドラインの引数を記したもの(`commandline.txt`)が出力されます。
+そのほかに、最適化を実行するクエリのコピー(ファイル名は入力と同じ)と、同じ様にコマンドを実行するための、コマンドラインの引数を記したもの(`commandline.txt`)が出力されます。
 
 例として以下のディレクトリは
 
