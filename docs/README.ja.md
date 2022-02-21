@@ -13,24 +13,26 @@ SPARQL クエリを、遺伝的アルゴリズム(以下GA)を使って、より
 5. 生成された個体に関して、一定の確率で突然変異が起こる。
 6. 次世代の集団に加える。
 7. ３−６の操作を、次世代の個体群が決められた個体数になるまで繰り返す
-8. 世代が決められてた回数に達するまで、２に戻る
+8. 世代が決められた回数に達するまで、２に戻る
 9. 結果を出力する
 
 ### 個体、個体群
 
-SPARQL-GAでは、個体をSPARQLクエリを精製するためものとして定義します。
+SPARQL-GAでは、個体をSPARQLクエリを生成するためのものとして定義します。
 
 決められた数の個体数の集団を個体群と定義します。
 
 ### 染色体、遺伝子
 
-TODO: 染色体の説明を書く、遺伝子の説明を書く
-
-SPARQL-GAでは、クエリをパースして、染色体とします。
+SPARQL-GAでは、クエリをパースして、[Basic Graph Pattern](https://www.w3.org/2001/sw/DataAccess/rq23/sparql-defns.html#defn_BasicGraphPattern)の配列部分全体を、染色体とします。
 遺伝子は、BGPが配列となっている部分の添字をとします。
 
+以下の例では、染色体 **2, 3, 0, 1** の場合の書き換え例を示しています。
 
-TODO: クエリと染色体の対応する図を載せる。
+![染色体の情報を用いて入れ替えた図](./SPARQL-GA-Figure-rewrite-query.png) "染色体の情報を用いて入れ替えた図")
+
+[元のクエリ https://is.gd/L6y72u](https://is.gd/L6y72u) だと、結果が帰ってくるまで１０数秒かかりますが、
+[2,3,0,1のクエリ https://is.gd/gzXMPd](https://is.gd/gzXMPd)だと、１秒以下で帰ってくるようになります。
 
 ### 集団のサイズ
 
@@ -100,22 +102,19 @@ Relative Order Preservation](https://citeseerx.ist.psu.edu/viewdoc/download?doi=
 最適化したいSPARQLクエリを準備します。
 このときに、SPARQLエンドポイントも知る必要があります。
 
-以下のクエリを例に、この文書では説明を進めます
+以下のクエリ `sample.rq` を例に、この文書では説明を進めます
 
 ```sparql
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX ncbigene: <http://identifiers.org/ncbigene/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX up: <http://purl.uniprot.org/core/>
-PREFIX p9: <http://purl.uniprot.org/SHA-384/>
-SELECT DISTINCT ?gene ?node_55 ?refseq
+SELECT DISTINCT ?gene ?type ?refseq
 WHERE {
-  p9:17D627D6E7D33D1A4BA3D187BD44176CE1C44E3D7324007F701F2B6A533B485BD039D59A62E6ED0BD89CB363094213C2 .
   ?gene obo:so_part_of ?refseq .
   ?gene dct:identifier "BRCA1" .
   ?gene rdfs:seeAlso ncbigene:672 .
-  ?gene rdfs:subClassOf ?node_55 .
+  ?gene rdfs:subClassOf ?type .
 }
 ```
 
@@ -156,7 +155,7 @@ bundle exec ruby sparql-ga.rb \
 - エンドポイント
   - "http://dev.togogenome.org/sparql"
 - SPARQLクエリ
-  - sample.rq
+  - `sample.rq` (2.2.1で紹介)
 - 集団のサイズ
   - 100
 - 世代数
@@ -197,8 +196,8 @@ Usage: sparql-ga [options]
   - バックスラッシュを残すかどうかのフラグ。標準では削除する。(deafult: true)
 - `--parse-only`
   - クエリをパースして表示する。実行は行わない。
-- `--execute-sparqlquery-only`
-  - あたら得られたSPARQLクエリを実行する。最適化は行わない。
+- `--execute-only`
+  - 与えられたSPARQLクエリを実行する。最適化は行わない。
   - 実行の際には、`DEFINE sql:select-option "order"` を先頭に加えて実行をする
 
 ## 結果の把握
@@ -210,8 +209,8 @@ Usage: sparql-ga [options]
 コマンドの実行が終了すると以下のような出力がされます。
 
 ```console
-All times Best fit: Chr [2, 1, 0, 3] => 22.30997477334286, elapsed time: 0.04482300003292039
-All times Fastest fit: Chr [2, 1, 0, 3] => 26.556898159366327, elapsed time: 0.03765499999281019
+All times Best fit: Chr [2, 3, 0, 1] => 23.010722966042735, elapsed time: 0.043458000058308244
+All times Fastest fit: Chr [2, 3, 0, 1] => 24.736555668893423, elapsed time: 0.04042600002139807
 ```
 
 上から
@@ -224,8 +223,8 @@ All times Fastest fit: Chr [2, 1, 0, 3] => 26.556898159366327, elapsed time: 0.0
 
 ディレクトリ構造は以下のようになっています。
 
-`result` というディレクトリのしたに実行した日時のディレクトリができます。
-このディレクトリのしたに３つディレクトリができます。
+`result` というディレクトリの下に実行した日時のディレクトリができます。
+このディレクトリの下に３つディレクトリができます。
 そのほかに、各世代終了時点での、いかのものが出力されています。
 
 - 最も評価値の高い個体の情報 `*_bestfit.txt`
@@ -244,18 +243,18 @@ All times Fastest fit: Chr [2, 1, 0, 3] => 26.556898159366327, elapsed time: 0.0
     ├── 2_bestfit.txt
     ├── 2_fastest.txt
     ├── sparql
-    └── timearray
+    └── time
 ```
 
 ### ファイルについて
 
 各ディレクトリに格納されるファイルは、各個体の情報を元にファイル名が決まります。
-染色体の情報が `3, 2, 0, 4, 1` である場合、ファイル名は、`3_2_0_4_1` となります。
+染色体の情報が `2, 3, 0, 1` である場合、ファイル名は、`2_3_0_1` となります。
 このファイル名に拡張子が付きます。
 
 #### sparql
 
-各個体ごとに、実行したsparqlクエリが入るディレクトリです
+各個体ごとに、実行したSPARQLクエリが入るディレクトリです
 
 ディレクトリの中には、各個体の情報からファイル名がきまり、拡張子は、 `rq` となります。
 
@@ -266,21 +265,18 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX ncbigene: <http://identifiers.org/ncbigene/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX up: <http://purl.uniprot.org/core/>
-PREFIX p9: <http://purl.uniprot.org/SHA-384/>
-SELECT DISTINCT ?gene ?node_55 ?refseq ?protein
+SELECT DISTINCT ?gene ?type ?refseq
 WHERE {
-?gene rdfs:seeAlso ncbigene:672 .
-?gene dct:identifier "BRCA1" .
-?gene rdfs:subClassOf ?node_55 .
-?protein up:mappedAnnotation p9:17D627D6E7D33D1A4BA3D187BD44176CE1C44E3D7324007F701F2B6A533B485BD039D59A62E6ED0BD89CB363094213C2 .
-?gene obo:so_part_of ?refseq .
+  ?gene rdfs:seeAlso ncbigene:672 .
+  ?gene rdfs:subClassOf ?type .
+  ?gene obo:so_part_of ?refseq .
+  ?gene dct:identifier "BRCA1" .
 }
 ```
 
-#### timearray
+#### time
 
-各個体ごとに、実行したすべての時間が記録されます。
+各個体毎に、実行したすべての時間が記録されます。
 
 ファイルの中身は、以下のようになります。
 
@@ -288,7 +284,7 @@ WHERE {
 ファイルの形式は、カンマ区切りのファイルです
 
 ```csv
-0.05539399999543093,0.054195000004256144,0.05448300001444295
+0.04468699998687953,0.04042600002139807,0.043458000058308244
 ```
 
 ## 参考情報
