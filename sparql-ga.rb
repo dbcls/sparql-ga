@@ -232,8 +232,7 @@ class SparqlChromosome < Chromosome
       timestr = t.strftime('%Y%m%dT%H%M%S')
       @@timestr = timestr
       @@output_sparql_directgory = FileUtils.mkdir_p("result/#{timestr}/sparql")[0]
-      @@output_time_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
-      @@output_timearray_directory = FileUtils.mkdir_p("result/#{timestr}/timearray/")[0]
+      @@output_timearray_directory = FileUtils.mkdir_p("result/#{timestr}/time/")[0]
     end
   end
 
@@ -258,10 +257,6 @@ class SparqlChromosome < Chromosome
     @executed_sparql = sga.create_new_querystring(@value)
     # remove backslash
     @executed_sparql = @executed_sparql.gsub(/\\/, '') if not @@leave_backslash
-    # @@number_of_trials.times{|i|
-    #   resulttime = sga.exec_sparql_query(@executed_sparql)
-    #   @resulttimearray << resulttime
-    # }
     @resulttimearray = sga.exec_sparql_query(@executed_sparql, @@number_of_trials)
     sortedsort = @resulttimearray.dup
     sortedsort.sort!
@@ -304,12 +299,8 @@ class SparqlChromosome < Chromosome
     File.open("#{@@output_sparql_directgory}/#{prefix}.rq", 'w') do |f|
       f.puts @executed_sparql
     end
-    # save elapsed time
-    File.open("#{@@output_time_directory}/#{prefix}.time.txt", 'w') do |f|
-      f.puts @resulttime
-    end
     # save elapsed time array
-    File.open("#{@@output_timearray_directory}/#{prefix}.timearray.txt", 'w') do |f|
+    File.open("#{@@output_timearray_directory}/#{prefix}.time.txt", 'w') do |f|
       f.puts @resulttimearray.join(',')
     end
   end
