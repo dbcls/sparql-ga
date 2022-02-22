@@ -142,7 +142,7 @@ bundle install --path vendor/bundle
 使い方は、以下のようになります。
 
 ```console
-bundle exec ruby sparql-ga.rb \
+bundle exec ruby bin/sparql-ga \
   --endpoint="http://dev.togogenome.org/sparql" \
   --sparqlquery=samples/sample.rq \
   --population_size=100 \

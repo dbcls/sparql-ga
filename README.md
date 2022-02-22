@@ -35,7 +35,7 @@ bundle install --path vendor/bundle
     - When sparql query which is sent to endpoint has backslash and it causes error, default remove them.
 
 ```console
-bundle exec ruby sparql-ga.rb --endpoint="http://dev.togogenome.org/sparql" \
+bundle exec ruby bin/sparql-ga --endpoint="http://dev.togogenome.org/sparql" \
   --sparqlquery=samples/sample.rq --population_size=100 \
   --generations=50
 ```
